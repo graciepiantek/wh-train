@@ -29,14 +29,35 @@ def main():
     model = model_loader.load_model_by_type(args.model_type, weights_path=args.weights_path)
 
     if args.model_type in ['efficientnet', 'resnet']:
-        print(f"Training {args.model_type} for a few epochs...")
+        print(f"Training {args.model_type} for {epochs} epochs...")
         
         history = model.fit(
             train_data,
-            epochs=5, 
+            epochs=2,
             validation_data=val_data,
             verbose=1
         )
+        
+        training_history = {
+            'model_type': args.model_type,
+            'epochs': len(history.history['loss']),
+            'final_train_accuracy': float(history.history['accuracy'][-1]),
+            'final_val_accuracy': float(history.history['val_accuracy'][-1]),
+            'final_train_loss': float(history.history['loss'][-1]),
+            'final_val_loss': float(history.history['val_loss'][-1]),
+            'history': {
+                'loss': [float(x) for x in history.history['loss']],
+                'accuracy': [float(x) for x in history.history['accuracy']],
+                'val_loss': [float(x) for x in history.history['val_loss']],
+                'val_accuracy': [float(x) for x in history.history['val_accuracy']]
+            }
+        }
+        
+        history_file = os.path.join(args.output_dir, f'{args.model_type}_training_history.json')
+        with open(history_file, 'w') as f:
+            json.dump(training_history, f, indent=2)
+        
+        print(f"Training history saved to {history_file}")
     
     evaluator = Evaluator(config, args.output_dir)
     
