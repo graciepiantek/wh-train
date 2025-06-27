@@ -1,4 +1,3 @@
-
 import tensorflow as tf
 import numpy as np
 import json
@@ -13,12 +12,15 @@ class Evaluator:
         self.output_dir = output_dir
         
     def evaluate_model(self, model, validation_data, model_name):
-        """Evaluate model on validation data"""
         print(f"Evaluating {model_name} model...")
         
         predictions = model.predict(validation_data, verbose=1)
-        predicted_classes = np.argmax(predictions, axis=1)
-
+        
+        if len(predictions.shape) == 2 and predictions.shape[1] == 1:
+            predicted_classes = (predictions > 0.5).astype(int).flatten()
+        else:
+            predicted_classes = np.argmax(predictions, axis=1)
+        
         true_classes = validation_data.classes
         class_labels = list(validation_data.class_indices.keys())
         
@@ -28,7 +30,8 @@ class Evaluator:
             true_classes, 
             predicted_classes, 
             target_names=class_labels,
-            output_dict=True
+            output_dict=True,
+            zero_division=0
         )
         
         cm = confusion_matrix(true_classes, predicted_classes)
@@ -45,7 +48,6 @@ class Evaluator:
         return results
     
     def save_results(self, results, model_name):
-        """Save evaluation results to files"""
         json_path = os.path.join(self.output_dir, f'{model_name}_results.json')
         with open(json_path, 'w') as f:
             json.dump(results, f, indent=2)
@@ -61,7 +63,6 @@ class Evaluator:
         print(f"Loss: {results['loss']:.4f}")
         
     def plot_confusion_matrix(self, cm, class_labels, model_name):
-        """Plot and save confusion matrix"""
         plt.figure(figsize=(10, 8))
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
                    xticklabels=class_labels, yticklabels=class_labels)
@@ -74,7 +75,6 @@ class Evaluator:
         plt.close()
         
     def compare_models(self, results_list):
-        """Compare multiple model results"""
         comparison = {}
         for results in results_list:
             comparison[results['model_name']] = {
@@ -87,4 +87,3 @@ class Evaluator:
             json.dump(comparison, f, indent=2)
         
         return comparison
-    

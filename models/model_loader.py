@@ -1,4 +1,3 @@
-
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense, GlobalAveragePooling2D
@@ -164,4 +163,3 @@ class ModelLoader:
         
         else:
             raise ValueError(f"Unknown model type: {model_type}")
-

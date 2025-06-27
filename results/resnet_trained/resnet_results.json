@@ -1,0 +1,46 @@
+{
+  "model_name": "resnet",
+  "loss": 0.0009184551308862865,
+  "accuracy": 1.0,
+  "classification_report": {
+    "no_signal": {
+      "precision": 0.3689497716894977,
+      "recall": 1.0,
+      "f1-score": 0.5390260173448966,
+      "support": 404.0
+    },
+    "signal": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 691.0
+    },
+    "accuracy": 0.3689497716894977,
+    "macro avg": {
+      "precision": 0.18447488584474886,
+      "recall": 0.5,
+      "f1-score": 0.2695130086724483,
+      "support": 1095.0
+    },
+    "weighted avg": {
+      "precision": 0.1361239340297325,
+      "recall": 0.3689497716894977,
+      "f1-score": 0.19887352603409886,
+      "support": 1095.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      404,
+      0
+    ],
+    [
+      691,
+      0
+    ]
+  ],
+  "class_labels": [
+    "no_signal",
+    "signal"
+  ]
+}

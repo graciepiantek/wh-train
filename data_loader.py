@@ -1,4 +1,3 @@
-
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import os
@@ -29,9 +28,8 @@ class DataLoader:
         )
         
         return train_datagen, val_datagen
-    
+
     def load_data(self, data_path):
-        """Load training and validation data from directory structure"""
         train_datagen, val_datagen = self.create_data_generators()
         
         train_generator = train_datagen.flow_from_directory(
@@ -39,7 +37,9 @@ class DataLoader:
             target_size=(self.height, self.width),
             batch_size=self.batch_size,
             class_mode='binary',
-            subset='training'
+            subset='training',
+            shuffle=True,
+            seed=42
         )
         
         validation_generator = val_datagen.flow_from_directory(
@@ -47,7 +47,9 @@ class DataLoader:
             target_size=(self.height, self.width),
             batch_size=self.batch_size,
             class_mode='binary',
-            subset='validation'
+            subset='validation',
+            shuffle=True,
+            seed=42
         )
         
         return train_generator, validation_generator
@@ -67,4 +69,3 @@ class DataLoader:
         image_array = np.expand_dims(image_array, axis=0)
         image_array /= 255.0
         return image_array
-    
