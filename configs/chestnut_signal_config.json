@@ -1,0 +1,18 @@
+{
+    "intersection": "chestnut",
+    "height": 180,
+    "width": 170,
+    "num_channels": 3,
+    "learning_rate": 0.01,
+    "optimizer": "SGD",
+    "momentum": 0.9,
+    "epochs": 10,
+    "batch_size": 32,
+    "patience": 3,
+    "validation_split": 0.15,
+    "width_shift_range": 0.2,
+    "rotation_range": 10,
+    "num_classes": 2,
+    "dropout_rate": 0.2,
+    "horizontal_flip": true
+}
