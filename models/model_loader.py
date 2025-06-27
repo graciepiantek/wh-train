@@ -145,15 +145,7 @@ class ModelLoader:
             if not weights_path:
                 raise ValueError("weights_path required for legacy models")
             
-            model = tf.keras.models.load_model(weights_path, compile=False)
-            
-            model.compile(
-                optimizer='sgd',
-                loss='binary_crossentropy',
-                metrics=['accuracy']
-            )
-            
-            return model
+            return self.load_legacy_model(weights_path)
         
         elif model_type == 'efficientnet':
             return self.load_efficientnet(num_classes)
