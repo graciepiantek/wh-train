@@ -7,7 +7,7 @@ import h5py
 import json
 from pathlib import Path
 
-#new method version and keras file type for all models
+#new method version and keras file type for all models and compiled 
 class ModelLoader:
     def __init__(self, config=None):
         self.config = config
@@ -19,7 +19,6 @@ class ModelLoader:
     
     @staticmethod
     def load_legacy_model(model_path):
-        """Load original model - handles both .keras and .h5 formats"""
         if model_path.endswith('.keras'):
             return tf.keras.models.load_model(model_path)
         else:
@@ -38,11 +37,11 @@ class ModelLoader:
                     if i == 0:
                         input_shape = layer_params.get('batch_input_shape', [None, 216, 384, 3])[1:]
                         model.add(Conv2D(layer_params['filters'], layer_params['kernel_size'],
-                                       activation=layer_params['activation'], padding=layer_params['padding'],
-                                       input_shape=input_shape))
+                                    activation=layer_params['activation'], padding=layer_params['padding'],
+                                    input_shape=input_shape))
                     else:
                         model.add(Conv2D(layer_params['filters'], layer_params['kernel_size'],
-                                       activation=layer_params['activation'], padding=layer_params['padding']))
+                                    activation=layer_params['activation'], padding=layer_params['padding']))
                 elif layer_class == 'MaxPooling2D':
                     model.add(MaxPooling2D(layer_params['pool_size'], strides=layer_params['strides']))
                 elif layer_class == 'Dropout':
@@ -53,6 +52,13 @@ class ModelLoader:
                     model.add(Dense(layer_params['units'], activation=layer_params['activation']))
             
             model.load_weights(model_path, by_name=True, skip_mismatch=True)
+            
+            model.compile(
+                optimizer='adam',
+                loss='binary_crossentropy',
+                metrics=['accuracy']
+            )
+            
             return model
     
     @staticmethod
@@ -104,7 +110,6 @@ class ModelLoader:
         return model
 
     def load_resnet(self, num_classes=None, trainable=False):
-        """Load ResNet152V2 with transfer learning setup"""
         if not self.config:
             raise ValueError("Config required for loading new models")
         
