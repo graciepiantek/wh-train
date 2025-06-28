@@ -1,17 +1,34 @@
 ## Project Set-up
-wh-train/
-├── configs/           
-├── models/                   
-│   ├── original/              - .keras format models
-│   ├── chestnut_original/     - .hdf5 format models
-│   └── fourth_original/       - .hdf5 format models
-├── results/                  
-├── data_loader.py 
-├── evaluator.py             
-├── main.py                  
-├── model_loader.py         
-├── analyze_results.py  
-└── run_all_evaluations.sh 
+```mermaid
+graph TD
+    A[wh-train] --> B[configs/]
+    A --> C[models/]
+    A --> D[results/]
+    A --> E[Scripts]
+    
+    B --> B1[chestnut_signal_config.json]
+    B --> B2[fourth_signal_config.json]
+    B --> B3[train_config.json]
+    
+    C --> C1[original/]
+    C --> C2[chestnut_original/]
+    C --> C3[fourth_original/]
+    
+    C1 --> C1a[chestnut_signal/]
+    C1 --> C1b[chestnut_train/]
+    C1 --> C1c[fourth_signal/]
+    C1 --> C1d[fourth_train/]
+    
+    D --> D1[test/]
+    D --> D2[test_original/]
+    D --> D3[test_resnet/]
+    
+    E --> E1[main.py]
+    E --> E2[data_loader.py]
+    E --> E3[evaluator.py]
+    E --> E4[model_loader.py]
+    E --> E5[analyze_results.py]
+    E --> E6[run_all_evaluations.sh]
 
 ## Models Tested
 
