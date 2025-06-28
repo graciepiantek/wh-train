@@ -4,10 +4,10 @@ source venv/bin/activate
 
 mkdir -p results/{chestnut_signal,chestnut_train,fourth_signal,fourth_train}
 
-CHESTNUT_SIGNAL_DATA="../datasets/signal_chestnut"
-CHESTNUT_TRAIN_DATA="../datasets/train_chestnut" 
-FOURTH_SIGNAL_DATA="../datasets/signal_fourth"
-FOURTH_TRAIN_DATA="../datasets/train_fourth/hayden" 
+CHESTNUT_SIGNAL_DATA="~/datasets/signal_chestnut"
+CHESTNUT_TRAIN_DATA="~/datasets/train_chestnut" 
+FOURTH_SIGNAL_DATA="~/datasets/signal_fourth"
+FOURTH_TRAIN_DATA="~/datasets/train_fourth/hayden" 
 
 CHESTNUT_SIGNAL_WEIGHTS="models/original/chestnut_signal/chestnut_signal_20200715_model.04-0.0102.keras"
 CHESTNUT_TRAIN_WEIGHTS="models/original/chestnut_train/chestnut_train_20200731_model.20-0.0646.keras"
