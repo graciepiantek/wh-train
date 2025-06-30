@@ -1,13 +1,85 @@
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense, GlobalAveragePooling2D
 from tensorflow.keras.applications import EfficientNetV2S, ResNet152V2
-from tensorflow.keras.models import Model
 import h5py
 import json
 from pathlib import Path
 
-#new method version and keras file type for all models and compiled 
+class TrainDetectionModel:
+    @staticmethod
+    def build(width, height, num_channels):
+        conv_kernel_size = (5, 5)
+        model = Sequential()
+        model.add(
+            Conv2D(8,
+                   conv_kernel_size,
+                   input_shape=(height, width, num_channels),
+                   activation='relu',
+                   padding='same'))
+        model.add(MaxPooling2D())
+        model.add(Dropout(0.2))
+        model.add(
+            Conv2D(16, conv_kernel_size, activation='relu', padding='same'))
+        model.add(MaxPooling2D())
+        model.add(Dropout(0.2))
+        model.add(
+            Conv2D(32, conv_kernel_size, activation='relu', padding='same'))
+        model.add(MaxPooling2D())
+        model.add(Dropout(0.2))
+        model.add(
+            Conv2D(64, conv_kernel_size, activation='relu', padding='same'))
+        model.add(MaxPooling2D())
+        model.add(Dropout(0.2))
+        model.add(Flatten())
+        model.add(Dense(64, activation='relu'))
+        model.add(Dropout(0.5))
+        model.add(Dense(1, activation='sigmoid'))
+        return model
+
+class SignalDetectionModel:
+    @staticmethod
+    def build(intersection, width, height, num_channels):
+        model = Sequential()
+        if intersection == 'fourth':
+            model.add(
+                Conv2D(8, (3, 3),
+                       input_shape=(height, width, num_channels),
+                       activation='relu',
+                       padding='same'))
+            model.add(MaxPooling2D())
+            model.add(Dropout(0.2))
+            model.add(Conv2D(16, (3, 3), activation='relu', padding='same'))
+            model.add(MaxPooling2D())
+            model.add(Dropout(0.2))
+            model.add(Flatten())
+            model.add(Dense(16, activation='relu'))
+            model.add(Dropout(0.5))
+            model.add(Dense(1, activation='sigmoid'))
+        elif intersection == 'chestnut':
+            max_pool_size = (2, 2)
+            max_pool_stride = 2
+            conv_kernel_size = (3, 3)
+            model.add(
+                Conv2D(32, (5, 5),
+                       input_shape=(height, width, num_channels),
+                       activation='relu'))
+            model.add(MaxPooling2D(pool_size=(3, 3), strides=max_pool_stride))
+            model.add(Dropout(0.2))
+            model.add(Conv2D(32, conv_kernel_size, activation='relu'))
+            model.add(
+                MaxPooling2D(pool_size=max_pool_size, strides=max_pool_stride))
+            model.add(Dropout(0.2))
+            model.add(Conv2D(64, conv_kernel_size, activation='relu'))
+            model.add(
+                MaxPooling2D(pool_size=max_pool_size, strides=max_pool_stride))
+            model.add(Dropout(0.2))
+            model.add(Flatten())
+            model.add(Dense(64, activation='relu'))
+            model.add(Dropout(0.5))
+            model.add(Dense(1, activation='sigmoid'))
+        return model
+
 class ModelLoader:
     def __init__(self, config=None):
         self.config = config
@@ -15,74 +87,76 @@ class ModelLoader:
             self.height = config['height']
             self.width = config['width']
             self.num_channels = config['num_channels']
-            self.learning_rate = config.get('learning_rate', 1e-3)
     
-    @staticmethod
-    def load_legacy_model(model_path):
-        if model_path.endswith('.keras'):
-            return tf.keras.models.load_model(model_path)
-        else:
-            with h5py.File(model_path, 'r') as f:
-                model_config_str = f.attrs['model_config']
-                if isinstance(model_config_str, bytes):
-                    model_config_str = model_config_str.decode('utf-8')
-                model_config = json.loads(model_config_str)
-            
-            model = Sequential()
-            for i, layer_config in enumerate(model_config['config']['layers']):
-                layer_class = layer_config['class_name']
-                layer_params = layer_config['config']
-                
-                if layer_class == 'Conv2D':
-                    if i == 0:
-                        input_shape = layer_params.get('batch_input_shape', [None, 216, 384, 3])[1:]
-                        model.add(Conv2D(layer_params['filters'], layer_params['kernel_size'],
-                                    activation=layer_params['activation'], padding=layer_params['padding'],
-                                    input_shape=input_shape))
-                    else:
-                        model.add(Conv2D(layer_params['filters'], layer_params['kernel_size'],
-                                    activation=layer_params['activation'], padding=layer_params['padding']))
-                elif layer_class == 'MaxPooling2D':
-                    model.add(MaxPooling2D(layer_params['pool_size'], strides=layer_params['strides']))
-                elif layer_class == 'Dropout':
-                    model.add(Dropout(layer_params['rate']))
-                elif layer_class == 'Flatten':
-                    model.add(Flatten())
-                elif layer_class == 'Dense':
-                    model.add(Dense(layer_params['units'], activation=layer_params['activation']))
-            
-            model.load_weights(model_path, by_name=True, skip_mismatch=True)
-            
-            model.compile(
-                optimizer='adam',
-                loss='binary_crossentropy',
-                metrics=['accuracy']
+    def load_original_model(self, model_type, intersection=None):
+        if model_type == 'train' or 'train' in str(model_type):
+            model = TrainDetectionModel.build(
+                width=self.width, 
+                height=self.height, 
+                num_channels=self.num_channels
             )
-            
-            return model
-    
-    @staticmethod
-    def load_all_legacy_models(models_folder):
-        models = {}
-        models_path = Path(models_folder)
+        elif model_type == 'signal' or 'signal' in str(model_type):
+            if intersection is None:
+                intersection = self.config.get('intersection')
+            if intersection is None:
+                raise ValueError("intersection parameter required for signal models")
+            model = SignalDetectionModel.build(
+                intersection=intersection,
+                width=self.width,
+                height=self.height, 
+                num_channels=self.num_channels
+            )
+        else:
+            raise ValueError(f"Unknown original model type: {model_type}")
         
-        for folder_name in ['modern_models', 'chestnut_original', 'fourth_original']:
-            folder_path = models_path / folder_name
-            if folder_path.exists():
-                for model_file in list(folder_path.glob("**/*.keras")) + list(folder_path.glob("**/*.hdf5")):
-                    model_name = str(model_file.relative_to(models_path).with_suffix('')).replace('/', '_')
-                    try:
-                        if model_file.suffix == '.keras':
-                            models[model_name] = tf.keras.models.load_model(str(model_file))
-                        else:
-                            models[model_name] = ModelLoader.load_legacy_model(str(model_file))
-                        print(f"Loaded legacy model: {model_name}")
-                    except Exception as e:
-                        print(f"Failed to load {model_name}: {e}")
-                        continue
-        return models
+        optimizer = self._get_optimizer(use_original_config=True)
+        model.compile(
+            optimizer=optimizer,
+            loss='binary_crossentropy',
+            metrics=['accuracy']
+        )
+        
+        return model
     
-    def load_efficientnet(self, num_classes=None, trainable=False):
+    def load_legacy_model_with_weights(self, model_path, config=None):
+        try:
+            if model_path.endswith('.keras'):
+                model = tf.keras.models.load_model(model_path, compile=False)
+                
+                optimizer = self._get_optimizer(use_original_config=True)
+                model.compile(
+                    optimizer=optimizer,
+                    loss='binary_crossentropy',
+                    metrics=['accuracy']
+                )
+                return model
+
+            elif model_path.endswith(('.hdf5', '.h5')):
+                filename = Path(model_path).name.lower()
+                
+                if 'train' in filename:
+                    model = self.load_original_model('train')
+                elif 'signal' in filename:
+                    intersection = self.config.get('intersection')
+                    if intersection is None:
+                        if 'chestnut' in filename:
+                            intersection = 'chestnut'
+                        elif 'fourth' in filename:
+                            intersection = 'fourth'
+                    model = self.load_original_model('signal', intersection)
+                else:
+                    raise ValueError(f"Cannot determine model type from filename: {filename}")
+
+                model.load_weights(model_path)
+                return model
+                
+        except Exception as e:
+            print(f"Error loading legacy model {model_path}: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+    
+    def load_efficientnet(self):
         if not self.config:
             raise ValueError("Config required for loading new models")
         
@@ -91,25 +165,30 @@ class ModelLoader:
             include_top=False,
             input_shape=(self.height, self.width, self.num_channels)
         )
-        
-        base_model.trainable = trainable
-        
+
+        base_model.trainable = False
+
         x = base_model.output
         x = GlobalAveragePooling2D()(x)
         x = Dropout(self.config.get('dropout_rate', 0.2))(x)
         predictions = Dense(1, activation='sigmoid', name='predictions')(x)
         
         model = Model(inputs=base_model.input, outputs=predictions)
-        
+
+        optimizer = self._get_optimizer(use_original_config=False)
         model.compile(
-            optimizer=self._get_optimizer(),
+            optimizer=optimizer,
             loss='binary_crossentropy',
             metrics=['accuracy']
         )
         
+        print(f"EfficientNet created with {model.count_params():,} total parameters")
+        trainable_params = sum([tf.keras.backend.count_params(w) for w in model.trainable_weights])
+        print(f"Only {trainable_params:,} parameters are trainable (classification head only)")
+        
         return model
 
-    def load_resnet(self, num_classes=None, trainable=False):
+    def load_resnet(self):
         if not self.config:
             raise ValueError("Config required for loading new models")
         
@@ -118,9 +197,9 @@ class ModelLoader:
             include_top=False,
             input_shape=(self.height, self.width, self.num_channels)
         )
-        
-        base_model.trainable = trainable
-        
+
+        base_model.trainable = False
+
         x = base_model.output
         x = GlobalAveragePooling2D()(x)
         x = Dropout(self.config.get('dropout_rate', 0.2))(x)
@@ -128,39 +207,50 @@ class ModelLoader:
         
         model = Model(inputs=base_model.input, outputs=predictions)
         
+        optimizer = self._get_optimizer(use_original_config=False)
         model.compile(
-            optimizer=self._get_optimizer(),
+            optimizer=optimizer,
             loss='binary_crossentropy',
             metrics=['accuracy']
         )
         
+        print(f"ResNet created with {model.count_params():,} total parameters")
+        trainable_params = sum([tf.keras.backend.count_params(w) for w in model.trainable_weights])
+        print(f"Only {trainable_params:,} parameters are trainable (classification head only)")
+        
         return model
     
-    def _get_optimizer(self):
-        optimizer_name = self.config.get('optimizer', 'adam').lower()
-        
-        if optimizer_name == 'sgd':
-            return tf.keras.optimizers.SGD(
-                learning_rate=self.learning_rate,
-                momentum=self.config.get('momentum', 0.9)
-            )
-        elif optimizer_name == 'adam':
-            return tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
-        else:
-            return tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
-    
-    def load_model_by_type(self, model_type, num_classes=None, weights_path=None):
-        if model_type == 'legacy' or model_type == 'original':
-            if not weights_path:
-                raise ValueError("weights_path required for legacy models")
+    def _get_optimizer(self, use_original_config=True):
+        if use_original_config:
+            optimizer_name = self.config.get('optimizer', 'SGD').upper()
+            lr = self.config.get('learning_rate', 1e-3)
             
-            return self.load_legacy_model(weights_path)
-        
+            if optimizer_name == 'SGD':
+                return tf.keras.optimizers.SGD(
+                    learning_rate=lr,
+                    momentum=self.config.get('momentum', 0.9)
+                )
+            elif optimizer_name == 'ADAM':
+                return tf.keras.optimizers.Adam(learning_rate=lr)
+            else:
+                return tf.keras.optimizers.SGD(
+                    learning_rate=lr,
+                    momentum=self.config.get('momentum', 0.9)
+                )
+        else:
+            lr = self.config.get('transfer_learning_rate', 1e-4)
+            return tf.keras.optimizers.Adam(learning_rate=lr)
+    
+    def load_model_by_type(self, model_type, weights_path=None, intersection=None):
+        if model_type == 'original':
+            if weights_path:
+                return self.load_legacy_model_with_weights(weights_path, self.config)
+            else:
+                filename = "train" if intersection is None else "signal"
+                return self.load_original_model(filename, intersection)
         elif model_type == 'efficientnet':
-            return self.load_efficientnet(num_classes)
-        
+            return self.load_efficientnet()
         elif model_type == 'resnet':
-            return self.load_resnet(num_classes)
-        
+            return self.load_resnet()
         else:
             raise ValueError(f"Unknown model type: {model_type}")
