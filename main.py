@@ -1,6 +1,8 @@
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
 import argparse
 import json
-import os
 import tensorflow as tf
 from data_loader import DataLoader
 from evaluator import Evaluator
