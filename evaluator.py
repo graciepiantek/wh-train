@@ -4,6 +4,7 @@ import json
 import os
 import time
 from sklearn.metrics import classification_report, confusion_matrix, precision_recall_fscore_support, roc_auc_score
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -27,7 +28,11 @@ class Evaluator:
             predicted_classes = np.argmax(predictions, axis=1)
         
         true_classes = validation_data.classes
-        class_labels = list(validation_data.class_indices.keys())
+
+        if hasattr(validation_data, 'class_indices'):
+            class_labels = list(validation_data.class_indices.keys())
+        else:
+            class_labels = ['class_0', 'class_1']
         
         loss, accuracy = model.evaluate(validation_data, verbose=0)
         
