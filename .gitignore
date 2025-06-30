@@ -6,3 +6,4 @@ __pycache__/
 local_analysis_env/
 analysis_results/
 cuda_12.5.0_555.42.02_linux.run
+.tf_venv/
