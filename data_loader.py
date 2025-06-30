@@ -94,40 +94,45 @@ class DataLoader:
             raise ValueError(f"Unknown dataset structure in {data_path}. Contents: {contents}")
 
     def _extract_date_from_filename(self, filename):
-        prefix_match = re.search(r'^([a-z]+)-.*?(\d{8})', filename)
+        print(f"DEBUG: Processing filename: {filename}")
+
+        prefix_match = re.search(r'^([a-z]+)-(\d{8})', filename)
         if prefix_match:
             prefix = prefix_match.group(1)
             date = prefix_match.group(2)
             
-            # Group by lighting condition + date
             if prefix in ['da', 'dp']: 
-                return f'daytime_{date}'
-            elif prefix in ['na', 'np']:  
-                return f'nighttime_{date}'
+                result = f'daytime_{date}'
+            elif prefix in ['na', 'np']:
+                result = f'nighttime_{date}'
             else:
-                return f'{prefix}_{date}'
-        
-        if filename.startswith('2020'):
-            date = filename[:8]
-            time_match = re.search(r'_(\d{6})', filename)
-            if time_match:
-                hour = int(time_match.group(1)[:2])
-                if 6 <= hour <= 18:
-                    return f'daytime_{date}'
-                else:
-                    return f'nighttime_{date}'
-            return f'timestamp_{date}'
-        
+                result = f'{prefix}_{date}'
+            
+            print(f"DEBUG: Prefix → {result}")
+            return result
+
+        if filename.startswith('2020') and len(filename) >= 15:
+            date = filename[:8]  
+            time_part = filename[9:15]
+            hour = int(time_part[:2])
+            
+            if 6 <= hour <= 18:
+                result = f'daytime_{date}'
+            else:
+                result = f'nighttime_{date}'
+            
+            print(f"DEBUG: Timestamp → {result}")
+            return result
+
         if filename.startswith('other_cam_'):
             cam_match = re.search(r'other_cam_([^_]+)', filename)
             if cam_match:
                 cam_type = cam_match.group(1)
-
-                if 'nt' in cam_type:
-                    return f'other_cam_night_{cam_type}'
-                else:
-                    return f'other_cam_day_{cam_type}'
+                result = f'other_cam_night_{cam_type}' if 'nt' in cam_type else f'other_cam_day_{cam_type}'
+                print(f"DEBUG: Camera → {result}")
+                return result
         
+        print(f"DEBUG: No match → unknown")
         return 'unknown'
 
     def _temporal_split_files_balanced(self, file_class_pairs, val_split=0.15, seed=42):
