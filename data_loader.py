@@ -32,95 +32,82 @@ class DataLoader:
         
         return train_datagen, val_datagen
 
-    def load_data(self, data_path, use_temporal_split=True):
-        if use_temporal_split:
-            return self._load_data_with_temporal_split(data_path)
-        else:
-            return self._load_data_original(data_path)
+    def load_data(self, data_path):
+        from sklearn.model_selection import train_test_split
+        import os
+        from tensorflow.keras.preprocessing.image import load_img, img_to_array
+        import numpy as np
+        
+        contents = os.listdir(data_path)
 
-    def _temporal_split_files_balanced(self, file_class_pairs, val_split=0.15, seed=42):
+        if 'signal' in contents and 'no_signal' in contents:
+            class_dirs = {
+                'signal': os.path.join(data_path, 'signal'),
+                'no_signal': os.path.join(data_path, 'no_signal')
+            }
+        elif 'train' in contents and 'no_train' in contents:
+            class_dirs = {
+                'train': os.path.join(data_path, 'train'),
+                'no_train': os.path.join(data_path, 'no_train')
+            }
+        else:
+            raise ValueError(f"Unknown dataset structure: {contents}")
         
-        print(f"Using simple random split for {len(file_class_pairs)} files")
+        all_files = []
+        all_labels = []
         
-        if len(file_class_pairs) < 2:
-            print("Not enough files for split")
-            return file_class_pairs, []
+        for class_name, class_path in class_dirs.items():
+            files = [f for f in os.listdir(class_path) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+            for f in files:
+                all_files.append(os.path.join(class_path, f))
+                all_labels.append(1 if class_name in ['train', 'signal'] else 0)
         
-        train_files, val_files = train_test_split(
-            file_class_pairs, 
-            test_size=val_split, 
-            random_state=seed,
-            stratify=None
+        print(f"Found {len(all_files)} total files")
+        
+        train_files, val_files, train_labels, val_labels = train_test_split(
+            all_files, all_labels, 
+            test_size=0.15, 
+            random_state=42,
+            stratify=all_labels
         )
         
-        print(f"Split result: {len(train_files)} train, {len(val_files)} val")
-        return train_files, val_files
+        print(f"Split: {len(train_files)} train, {len(val_files)} val")
+        
+        def load_images(files, labels):
+            images = []
+            valid_labels = []
+            for file_path, label in zip(files, labels):
+                try:
+                    img = load_img(file_path, target_size=(self.height, self.width))
+                    img_array = img_to_array(img) / 255.0
+                    images.append(img_array)
+                    valid_labels.append(label)
+                except:
+                    continue
+            return np.array(images), np.array(valid_labels)
+        
+        print("Loading images")
+        train_images, train_labels = load_images(train_files, train_labels)
+        val_images, val_labels = load_images(val_files, val_labels)
 
-    def _create_generator_from_files(self, file_class_pairs, augment=True):
-        if not file_class_pairs:
-            raise ValueError("No files provided for generator creation!")
-        
-        files, class_names = zip(*file_class_pairs)
-
-        labels = []
-        for class_name in class_names:
-            if class_name in ['train', 'signal']:
-                labels.append(1)
-            else:
-                labels.append(0)
-        
-        images = []
-        valid_labels = []
-        
-        print(f"Loading {len(files)} images...")
-        
-        for i, (file_path, label) in enumerate(zip(files, labels)):
-            try:
-                img = load_img(file_path, target_size=(self.height, self.width))
-                img_array = img_to_array(img)
-                images.append(img_array)
-                valid_labels.append(label)
-                
-                if (i + 1) % 1000 == 0:
-                    print(f"Loaded {i + 1}/{len(files)} images...")
-                    
-            except Exception as e:
-                print(f"Warning: Could not load {file_path}: {e}")
-                continue
-        
-        if not images:
-            raise ValueError("No valid images found!")
-        
-        images = np.array(images)
-        labels = np.array(valid_labels)
-        
-        print(f"Successfully loaded {len(images)} images")
-        print(f"Class distribution: {np.sum(labels)} positive, {len(labels) - np.sum(labels)} negative")
-        
-        if augment:
-            datagen = ImageDataGenerator(
-                rescale=1./255,
-                width_shift_range=self.config.get('width_shift_range', 0.0),
-                height_shift_range=self.config.get('height_shift_range', 0.0),
-                horizontal_flip=self.config.get('horizontal_flip', False),
-                rotation_range=self.config.get('rotation_range', 0)
-            )
-        else:
-            datagen = ImageDataGenerator(rescale=1./255)
-        
-        generator = datagen.flow(
-            images, 
-            labels,
-            batch_size=self.batch_size,
-            shuffle=True,
-            seed=42
+        train_datagen = ImageDataGenerator(
+            width_shift_range=self.config.get('width_shift_range', 0.0),
+            height_shift_range=self.config.get('height_shift_range', 0.0),
+            horizontal_flip=self.config.get('horizontal_flip', False),
+            rotation_range=self.config.get('rotation_range', 0)
         )
-
-        generator.samples = len(images)
-        generator.classes = labels
-        generator.class_indices = {'no_train': 0, 'train': 1} if any('train' in cn for cn in class_names) else {'no_signal': 0, 'signal': 1}
         
-        return generator
+        val_datagen = ImageDataGenerator()
+        
+        train_generator = train_datagen.flow(train_images, train_labels, batch_size=self.batch_size, shuffle=True)
+        val_generator = val_datagen.flow(val_images, val_labels, batch_size=self.batch_size, shuffle=False)
+        
+        train_generator.samples = len(train_images)
+        val_generator.samples = len(val_images)
+        train_generator.classes = train_labels
+        val_generator.classes = val_labels
+        
+        return train_generator, val_generator
 
     def _load_data_original(self, data_path):
         train_datagen, val_datagen = self.create_data_generators()
