@@ -45,22 +45,57 @@ class DataLoader:
                 'signal': os.path.join(data_path, 'signal'),
                 'no_signal': os.path.join(data_path, 'no_signal')
             }
+            all_files = []
+            all_labels = []
+            
+            for class_name, class_path in class_dirs.items():
+                files = [f for f in os.listdir(class_path) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+                for f in files:
+                    all_files.append(os.path.join(class_path, f))
+                    all_labels.append(1 if class_name == 'signal' else 0)
+                    
         elif 'train' in contents and 'no_train' in contents:
             class_dirs = {
                 'train': os.path.join(data_path, 'train'),
                 'no_train': os.path.join(data_path, 'no_train')
             }
+            all_files = []
+            all_labels = []
+            
+            for class_name, class_path in class_dirs.items():
+                files = [f for f in os.listdir(class_path) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+                for f in files:
+                    all_files.append(os.path.join(class_path, f))
+                    all_labels.append(1 if class_name == 'train' else 0)
+        
+        elif len(contents) == 2 and all(os.path.isdir(os.path.join(data_path, item)) for item in contents):
+            all_files = []
+            all_labels = []
+            
+            for user_dir in contents:
+                user_path = os.path.join(data_path, user_dir)
+                user_contents = os.listdir(user_path)
+                
+                if 'train' in user_contents and 'no_train' in user_contents:
+                    train_path = os.path.join(user_path, 'train')
+                    train_files = [f for f in os.listdir(train_path) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+                    for f in train_files:
+                        all_files.append(os.path.join(train_path, f))
+                        all_labels.append(1)
+                    
+                    no_train_path = os.path.join(user_path, 'no_train')
+                    no_train_files = [f for f in os.listdir(no_train_path) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+                    for f in no_train_files:
+                        all_files.append(os.path.join(no_train_path, f))
+                        all_labels.append(0)
+            
+            if not all_files:
+                raise ValueError(f"No image files found in dataset structure: {contents}")
+            
+            print(f"Found {len(all_files)} total files from user directories")
+
         else:
             raise ValueError(f"Unknown dataset structure: {contents}")
-        
-        all_files = []
-        all_labels = []
-        
-        for class_name, class_path in class_dirs.items():
-            files = [f for f in os.listdir(class_path) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
-            for f in files:
-                all_files.append(os.path.join(class_path, f))
-                all_labels.append(1 if class_name in ['train', 'signal'] else 0)
         
         print(f"Found {len(all_files)} total files")
         
