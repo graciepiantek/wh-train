@@ -118,35 +118,35 @@ class ModelLoader:
         
         return model
     
-def load_legacy_model_with_weights(self, model_path, config=None):
-    try:
-        if model_path.endswith('.keras'):
-            model = tf.keras.models.load_model(model_path, compile=False)
+    def load_legacy_model_with_weights(self, model_path, config=None):
+        try:
+            if model_path.endswith('.keras'):
+                model = tf.keras.models.load_model(model_path, compile=False)
 
-            optimizer = self._get_optimizer(use_original_config=True)
-            model.compile(
-                optimizer=optimizer,
-                loss='binary_crossentropy',
-                metrics=['accuracy']
-            )
-            return model
+                optimizer = self._get_optimizer(use_original_config=True)
+                model.compile(
+                    optimizer=optimizer,
+                    loss='binary_crossentropy',
+                    metrics=['accuracy']
+                )
+                return model
 
-        elif model_path.endswith(('.hdf5', '.h5')):
-            intersection = self.config.get('intersection')
-            
-            if intersection in ['chestnut', 'fourth']:
-                model = self.load_original_model('signal', intersection)
-            else:
-                model = self.load_original_model('train')
-            
-            model.load_weights(model_path)
-            return model
-            
-    except Exception as e:
-        print(f"Error loading legacy model {model_path}: {e}")
-        import traceback
-        traceback.print_exc()
-        return None
+            elif model_path.endswith(('.hdf5', '.h5')):
+                intersection = self.config.get('intersection')
+                
+                if intersection in ['chestnut', 'fourth']:
+                    model = self.load_original_model('signal', intersection)
+                else:
+                    model = self.load_original_model('train')
+                
+                model.load_weights(model_path)
+                return model
+                
+        except Exception as e:
+            print(f"Error loading legacy model {model_path}: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
     
     def load_efficientnet(self):
         if not self.config:
