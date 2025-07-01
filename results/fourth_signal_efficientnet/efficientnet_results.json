@@ -1,0 +1,53 @@
+{
+  "model_name": "efficientnet",
+  "loss": 0.6657282710075378,
+  "accuracy": 0.6456456184387207,
+  "precision": 0.6288659793814433,
+  "recall": 0.9481865284974094,
+  "f1_score": 0.756198347107438,
+  "roc_auc": 0.7065136935603256,
+  "total_params": 20332641,
+  "inference_time_per_image": 0.0962774710612254,
+  "total_inference_time": 32.06039786338806,
+  "classification_report": {
+    "class_0": {
+      "precision": 0.7619047619047619,
+      "recall": 0.22857142857142856,
+      "f1-score": 0.3516483516483517,
+      "support": 140.0
+    },
+    "class_1": {
+      "precision": 0.6288659793814433,
+      "recall": 0.9481865284974094,
+      "f1-score": 0.756198347107438,
+      "support": 193.0
+    },
+    "accuracy": 0.6456456456456456,
+    "macro avg": {
+      "precision": 0.6953853706431026,
+      "recall": 0.588378978534419,
+      "f1-score": 0.5539233493778949,
+      "support": 333.0
+    },
+    "weighted avg": {
+      "precision": 0.6847982002621177,
+      "recall": 0.6456456456456456,
+      "f1-score": 0.5861172679354497,
+      "support": 333.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      32,
+      108
+    ],
+    [
+      10,
+      183
+    ]
+  ],
+  "class_labels": [
+    "class_0",
+    "class_1"
+  ]
+}
