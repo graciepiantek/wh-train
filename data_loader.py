@@ -137,7 +137,8 @@ class DataLoader:
                 class_mode='binary',
                 subset='training',
                 shuffle=True,
-                seed=42
+                seed=42,
+                classes=['no_train', 'train']
             )
             
             validation_generator = val_datagen.flow_from_directory(
